@@ -1,8 +1,7 @@
 import csv
 import random
 
-nb_points = 0
-
+# --- Fonction : Évalue la réponse ---
 def bot_answer(user_input): # Evalue la réponse
   global nb_points 
   global current_row
@@ -17,6 +16,8 @@ def bot_answer(user_input): # Evalue la réponse
     g = f'{a}\nLa réponse correcte est {current_row[1]} !'
   return g
 
+
+# --- Ouverture du fichier ---
 f = open('questions.csv', encoding='utf-8')
 
 nl = len(f.readlines())
@@ -24,9 +25,19 @@ f.seek(0)
 
 reader = csv.reader(f, delimiter=',')
 
-nb_q = int(input("Entrez la durée de la manche : "))
+# --- Choix du nombre de questions en début de partie ---
+repeat = True
+while repeat == True:
+  nb_q = int(input("Entrez le nombre de tours de la partie : "))
+  if nb_q > nl: # S'il n'y a pas assez de questions dans le csv, redemande d'entrer un autre nombre
+    print("Il n'y a pas assez de questions disponibles !")
+    repeat = True
+  else: repeat = False
 
-for q in range(1, nb_q+1) : # Alterne entre question du bot, entrée de l'utilisateur et réponse du bot
+# --- Alterne entre question du bot, entrée de l'utilisateur et réponse du bot ---
+nb_points = 0
+
+for q in range(1, nb_q+1):
   rand_nb = random.randint(0, nl-1)
   current_row = []
   for i, row in enumerate(reader):
@@ -39,4 +50,5 @@ for q in range(1, nb_q+1) : # Alterne entre question du bot, entrée de l'utilis
   print(f'\nJean-Pierre Foucault ==> {bot_answer(user_input)} \n')
   f.seek(0)
 
-print (f'La partie est terminée !\nVotre score final est de {nb_points} points !')
+# --- Fin de la partie ---
+print (f'La partie est terminée !\nVotre score final est de {nb_points} points.')

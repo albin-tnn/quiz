@@ -1,2 +1,4 @@
 Pour la présentation on devra expliquer si on a renconter des problèmes 
 Donc on pourra noter ici nos difficultés
+
+ - Les f.seek oubliés qui ne permettent pas plusieurs questions d'affilée
