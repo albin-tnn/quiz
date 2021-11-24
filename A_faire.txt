@@ -1,19 +1,22 @@
 A faire :
 
-Faire des questions par thèmes et demander à l'utilisateur de choisir le thème qu'il veut
 Eviter la répétition des questions
-Randomiser l'ordre des réponses proposées
-Belle mise en page 
+Accueil dans le quiz
 Choisir le nom du quiz
 
 Idées pour aller plus loin :
 
-Mettre un temps limite par question
-Nommer les réponses possibles A B C D 
-Créer une autre façon de jouer : le plus de question en 1 minute
+Quiz par matière étudiée
+Mettre des photos (utile pour répéter la géologie, pédologie)
+Mettre un temps limite par question 
 Mettre des Vrai/Faux
 Commenter le résultat
+Proposer différents niveaux de difficulté (points négatifs ?)
+Culture générale : chercher dans tous les dossiers ?
+Créer une autre façon de jouer : le plus de question en 1 minute
 Garder les scores et présenter des statistiques (Graphe ?)
+Graphisme
 Mettre une petite musique de fond
 Jouer à deux
+Taper Echap pour quitter la partie en cours
 ...
