@@ -1,5 +1,7 @@
 A faire :
 
+Albin : liste des questions triées aléatoirement dès le départ
+
 Eviter la répétition des questions
 Accueil dans le quiz
 Choisir le nom du quiz

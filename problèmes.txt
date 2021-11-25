@@ -3,3 +3,4 @@ Donc on pourra noter ici nos difficultés
 
  - Les f.seek oubliés qui ne permettent pas plusieurs questions d'affilée
  - Le code doit rester lisible, difficile quand on travaille à plusieurs
+ - Que les questions ne se répètent pas (fait avec une liste randomisée (shuffle) qui contient toutes les questions, à chaque question prend l'index du no de la question - 1)
