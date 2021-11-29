@@ -1,23 +1,14 @@
-A faire :
-
-Albin : liste des questions triées aléatoirement dès le départ
-
-Eviter la répétition des questions
-Accueil dans le quiz
-Choisir le nom du quiz
+Bonne nouvelle : Le programme est 100% fonctionnel !
 
 Idées pour aller plus loin :
 
-Quiz par matière étudiée
-Mettre des photos (utile pour répéter la géologie, pédologie)
 Mettre un temps limite par question 
 Mettre des Vrai/Faux
-Commenter le résultat
 Proposer différents niveaux de difficulté (points négatifs ?)
 Culture générale : chercher dans tous les dossiers ?
 Créer une autre façon de jouer : le plus de question en 1 minute
-Garder les scores et présenter des statistiques (Graphe ?)
-Graphisme
+Garder les scores et présenter des statistiques (Graphe, moyenne)
+Graphisme (tkinter)
 Mettre une petite musique de fond
 Jouer à deux
 Taper Echap pour quitter la partie en cours
