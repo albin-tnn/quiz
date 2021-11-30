@@ -2,8 +2,24 @@ import csv
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+from math import sqrt
 from PIL import Image
 
+from tkinter import *
+# Toutes les variables et fonctions liées à l'interface Tkinter sont préfixées "ui"
+
+uiWindow = Tk()
+
+
+uiWindow.title('La Colle')
+uiWindow.geometry('400x250')
+
+uiCanvas_qimages = Canvas(uiWindow, height=150, bg='ivory')
+
+# uiWindow.mainloop()
+
+tot_q = IntVar()
+nl = 1
 
 themes_jeu = {
   'A' : 'culture',
@@ -22,6 +38,40 @@ themes_revision = {
   'H' : 'informatique'
 }
 
+def uiClear(type):
+    list = uiWindow.pack_slaves()
+    if type == '':
+      for i in list:
+        i.destroy()
+    else:
+      for i in list:
+        if i.winfo_class() == type:
+          i.destroy()
+
+def uiHome_Click():
+  uiClear('')
+  uiWelcome()
+
+uiTxt_welcome = StringVar()
+uiMenubar = Menu(uiWindow)
+uiMenu1 = Menu(uiMenubar, tearoff=0)
+uiMenubar.add_command(label="Retour", command=uiHome_Click)
+
+# --- Fonction : Accueil dans le quiz ---
+def uiWelcome():
+  uiMenuEmpty = Menu(uiWindow)
+  uiMenuEmpty.add_command(label='')
+  uiWindow.config(menu=uiMenuEmpty)
+
+  print ('Bienvenue dans le quiz : La Colle', '\U0001F9D0\n\nPrêt.e à répondre aux questions ?\n ')
+
+  uiTxt_welcome.set('Bienvenue dans le quiz : La Colle  \U0001F9D0\n\nPrêt.e à répondre aux questions ?\n\nQue voulez-vous faire ?\n')
+
+  uiLabel_welcome = Label(uiWindow, textvariable=uiTxt_welcome)
+  uiLabel_welcome.pack(side=TOP, pady=15)
+
+  uiBtnPlay = Button(uiWindow, text ='Jouer', command=uiBtnPlay_Click).pack(side=LEFT, padx=15, pady=5)
+  uiBtnRevise = Button(uiWindow, text ='Réviser', command=uiBtnRevise_Click).pack(side=RIGHT, padx=15, pady=5)
 
 
 # --- Fonction : Évalue la réponse ---
@@ -82,13 +132,91 @@ def commentaire_score () :
   elif score == 100 :
     return 'Félicitations \U0001F973 \U0001F973 \U0001F973'
 
+def uiBtnRoundsNb_Click():
+  if tot_q.get() > nl:
+    return
+  elif tot_q.get() < 1:
+    return
   
+  uiClear('')
+
+  uiCanvas_qimages.pack(side=TOP, padx=5, pady=5)
+
+  
+
+
+
+def play(theme):
+  # --- Ouverture du fichier ---
+  global nl
+  f = open(f'{theme}.csv', encoding='utf-8')
+
+  nl = len(f.readlines())
+  f.seek(0)
+
+  print((theme, nl))
+
+  reader = csv.reader(f, delimiter=',')
+
+  questions_list = [] # Permet d'éviter la répétition des questions
+  for row in reader:
+    questions_list.append(row)
+  random.shuffle(questions_list)
+
+  uiClear('Canvas')
+  uiTxt_welcome.set(f"Entrez le nombre de tours de la partie (entre 1 et {nl}) : ")
+
+  Entry(uiWindow, width = 15, textvariable = tot_q).pack()
+  Button(uiWindow, text="C'est parti !", command=uiBtnRoundsNb_Click).pack(pady=15)
+
+  return questions_list
+
+def uiSetGrid(themeDict):
+  uiGridList = []
+  # gridSize = int(sqrt(len(themeDict)) + 0.5) # grille carrée
+  gridSize = int(len(themeDict)/2 + 0.5) # grille à 2 colonnes
+  for irow in range(1, gridSize+1):
+    for icol in range(1, 3):
+      uiGridList.append((irow, icol))
+  return uiGridList
+
+def uiThemes_Click(v):
+  for k, vt in themes_jeu.items():
+    if v == vt:
+      play(themes_jeu[k])
+      #return
+  for k, vt in themes_revision.items():
+    if v == vt:
+      play(themes_revision[k])
+      #return
+
+def uiGetThemes(themeDict):
+  uiClear('Button')
+  uiCanvas_themes = Canvas(uiWindow)
+  uiGridList = uiSetGrid(themeDict)
+  for i, v in enumerate(themeDict.values()):
+    print(v)
+    irow, icol = uiGridList[i]
+    Button(uiCanvas_themes, text=v.capitalize(), command=lambda: uiThemes_Click(v)).grid(row=irow, column=icol, sticky='nesw')
+  uiCanvas_themes.pack(side=BOTTOM, pady=15)
+  uiWindow.config(menu=uiMenubar)
+
+def uiBtnPlay_Click():
+  uiTxt_welcome.set('Sur quel thème voulez-vous jouer ?')
+  uiGetThemes(themes_jeu)
+  
+def uiBtnRevise_Click():
+  uiTxt_welcome.set('Quel thème voulez-vous réviser ?')
+  uiGetThemes(themes_revision)  
+
+
+# --- Bienvenue ! ---
+uiClear('')
+uiWelcome()
+
 # --- Effaçage du contenu du fichier progression ---
 e = open ('progression.csv', 'w') # Permet d'avoir un fichier avec seulement les scores de cette partie
 e.close()                         
-
-# --- Accueil dans le quiz ---
-print ('Bienvenue dans le quiz : La Colle', '\U0001F9D0\n\nPrêt.e à répondre aux questions ?\n ')
 
 
 # --- Boucle qui permet la partie, une fois terminée, d'être recommencée ---
@@ -110,17 +238,7 @@ while retry == True :
 
 
 # --- Ouverture du fichier ---
-  f = open(f'{theme(c)}.csv', encoding='utf-8')
-
-  nl = len(f.readlines())
-  f.seek(0)
-
-  reader = csv.reader(f, delimiter=',')
-
-  questions_list = [] # Permet d'éviter la répétition des questions
-  for row in reader:
-    questions_list.append(row)
-  random.shuffle(questions_list)
+  questions_list = play(theme(c))
 
 # --- Choix du nombre de questions en début de partie ---
   repeat = True
