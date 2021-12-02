@@ -1,15 +1,16 @@
-Bonne nouvelle : Le programme est 100% fonctionnel !
+A faire en priorité :
 
-Idées pour aller plus loin :
+Finir le code
+Changer themes_jeu / themes_revision par des listes
+Mettre des photos
+Changer peut-être les dimensions ; certaines réponses sortent de la fenêtre
+Vérifier qu'il ne reste pas des parties de code devenue obsolète
+Réordonner les fonctions, enlever le préfixe ui à certains endroits ?
+Mettre des commentaires pour expliquer
 
-Mettre un temps limite par question 
-Mettre des Vrai/Faux
-Proposer différents niveaux de difficulté (points négatifs ?)
-Culture générale : chercher dans tous les dossiers ?
-Créer une autre façon de jouer : le plus de question en 1 minute, une faute et le programme s'arrête
+Idée à déterminer :
+
+L'avis du public
+Proposer un lien wikipédia si le joueur veut se renseigner après avoir fait faux (ou juste aussi ?)
 Garder les scores et présenter des statistiques (Graphe, moyenne)
-Graphisme (tkinter)
-Mettre une petite musique de fond
-Jouer à deux
-Taper Echap pour quitter la partie en cours
-...
+Mettre un temps limite par question 

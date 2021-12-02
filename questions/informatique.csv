@@ -1,0 +1,22 @@
+On ne sait pas quoi répondre au professeur. Quelle réponse a le plus de probabilité d'être juste ?;une boucle;une condition;une fonction;une string;
+Quel est le type de la variable a dans a = input ('Entrez un nombre : ');chaîne de caractères;entier;flottant;null;
+Que renvoie un opérateur de comparaison(==; !=; <=; ...) ?;un booléen;un entier;un flottant;null;
+Que renvoie bool(5) ?;True;False;Null;On ne peut pas faire ça;
+Que renvoie False or not False ?;True;False;Null;On ne peut pas faire ça;
+Que renvoie True or False ?;True;False;Null;On ne peut pas faire ça;
+Que renvoie True or print('hello') ?;True;False;Null;hello;
+Que renvoie True and print('hello') ?;hello;False;Null;True;
+Que vaut 1B (héxadécimal) en binaire ?;1011;1010;27;1101;
+Que vaut 39 en héxadécimal ?;27;2C;1A;18;
+Soit le tuple a = (1 , 'b' , 'la'). Comment y ajouter la lettre c ?;on ne peut pas;a.append('c');a.add('c');a.pop('c');
+Quel valeur/signe est vrai ?;5;0;[];''
+Qu'est-ce qui est capital lorsqu'on utilise une condition, une boucle, définit une fonction ?;Indenter;Mettre des parenthèses;Mettre un point d'exclamation à la fin du code;Importer numpy;
+Les listes sont des collections :;Muables de valeurs ordonnée; Immuables de valeurs sans ordre;Muables de valeurs sans ordre;Immuables de valeurs ordonnées;
+Les tuples sont des collections :;Immuables de valeurs ordonnées;Muable de valeurs ordonnées;Immuables de valeurs sans ordre;Muable de valeurs sans ordre;
+l = [1,2,3,4], que vaut l[3] ?;4;3;2;1;
+Est-ce que la syntaxe est juste : car[color] = blue ?;Non, il manque les guillemets autour de la clé et de la valeur;Oui;Non, il faut des {} autour de la clé;Non, il faut des {} autour de la clé et la clé et la valeur doivent être entre guillemet;
+Qu'est-ce qui caractérise les ensembles(sets) ?;Chaque valeur est unique;Ils sont immuables;Les valeurs sont ordonnées;Ils sont délimités par des [];
+Que fait la fonction all ?;Teste si toutes les valeurs d'une collection sont vraies;Trie les valeurs des collections en ordre croissant;Elimine les valeurs à double dans une collection;Teste si au moins une valeur d'une collection est vraie;
+Quel objet n'est pas itérable ?;un entier;une string;une liste;un dictionnaire;
+A quoi servent les fonctions ?;A réutiliser du code;A faire plus beau;A se compliquer la vie;A calculer des réponses;
+Quel est le type de a dans : def info() : a = print('5.0') ?;None;Une string;Un entier;Un flottant;

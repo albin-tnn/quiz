@@ -1,27 +1,11 @@
 {
   "files": {
-    "culture.csv": [
-      {
-        "id": "5a8558cb-e2c9-4a1d-8680-ef995348e558",
-        "line": 16,
-        "version": 1434,
-        "index": 1662
-      }
-    ],
     "histoire.csv": [
       {
         "id": "58e040c3-5e83-4d32-99d8-06dfbf661b65",
         "line": 19,
-        "version": 2400,
+        "version": 2611,
         "index": 2191
-      }
-    ],
-    "main.py": [
-      {
-        "id": "6baed9c1-1aa3-4e55-9f8a-939ccabd4a68",
-        "line": 214,
-        "version": 17810,
-        "index": 5597
       }
     ]
   }
