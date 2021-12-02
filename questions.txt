@@ -1,3 +1,6 @@
 Il y a quelque chose de bizarre dans notre code : l'ordre des réponses est toujours le même pour la même question, pourquoi ? Peut-on changer cela ?
 Le graphe n'apparaît pas ! Le message d'erreur est "list index out of range", il ne comprend pas la position row[1]
 Si on entre une lettre (par exemple x auquel n'est associé aucun thème) alors le fichier s'arrête, faut-il l'éviter ?
+Pertinence du graphe
+Pourquoi plus de seek(0)?
+Culture générale : chercher dans tous les dossiers ?

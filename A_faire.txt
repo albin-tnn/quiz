@@ -6,7 +6,7 @@ Mettre un temps limite par question
 Mettre des Vrai/Faux
 Proposer différents niveaux de difficulté (points négatifs ?)
 Culture générale : chercher dans tous les dossiers ?
-Créer une autre façon de jouer : le plus de question en 1 minute
+Créer une autre façon de jouer : le plus de question en 1 minute, une faute et le programme s'arrête
 Garder les scores et présenter des statistiques (Graphe, moyenne)
 Graphisme (tkinter)
 Mettre une petite musique de fond

@@ -6,6 +6,7 @@ from math import sqrt
 from PIL import Image
 
 from tkinter import *
+from PIL import ImageTk
 # Toutes les variables et fonctions liées à l'interface Tkinter sont préfixées "ui"
 
 uiWindow = Tk()
@@ -14,17 +15,22 @@ uiWindow = Tk()
 uiWindow.title('La Colle')
 uiWindow.geometry('400x250')
 
-uiCanvas_qimages = Canvas(uiWindow, height=150, bg='ivory')
+questions_list = []
+nb_points = 0
+id_q = IntVar()
+tot_q = IntVar()
+uiTxt_question = StringVar()
+uiCanvas_reponses = Canvas(uiWindow)
 
 # uiWindow.mainloop()
 
-tot_q = IntVar()
 nl = 1
 
 themes_jeu = {
   'A' : 'culture',
   'B' : 'suisse',
   'C' : 'histoire',
+  'D' : 'musique'
 }
 
 themes_revision = {
@@ -56,6 +62,9 @@ uiTxt_welcome = StringVar()
 uiMenubar = Menu(uiWindow)
 uiMenu1 = Menu(uiMenubar, tearoff=0)
 uiMenubar.add_command(label="Retour", command=uiHome_Click)
+uiMenubar.add_command(label='           ')
+uiMenubar.add_command(label='')
+uiMenubar.add_command(label='')
 
 # --- Fonction : Accueil dans le quiz ---
 def uiWelcome():
@@ -132,23 +141,111 @@ def commentaire_score () :
   elif score == 100 :
     return 'Félicitations \U0001F973 \U0001F973 \U0001F973'
 
+
+def create_question():
+  global uiCanvas_reponses
+  global uiWaitVar
+  global uiTxt_question
+
+  id_q_local = id_q.get()
+
+  row = questions_list[id_q_local-1]
+
+  uiTxt_question.set(row[0])
+
+  uiMenubar.entryconfigure(3,uiMenubar.entryconfigure(3, label=f'Question {id_q_local}/{tot_q.get()}'))
+
+  reponses = [row[1], row[2], row[3], row[4]]
+  random.shuffle(reponses) # réponses dans un ordre aléatoire
+
+  uiGridList = uiSetGrid(reponses)
+
+  uiCanvasList = []
+
+  uiCanvas_reponses.destroy()
+
+  uiCanvas_reponses_local = Canvas(uiWindow)
+  uiCanvas_reponses_local.pack()
+  uiCanvas_reponses = uiCanvas_reponses_local
+
+  for i in reponses:
+    print((row.index(i), reponses.index(i)))
+    irow, icol = uiGridList[reponses.index(i)]
+    uiBtn_reponse = Button(uiCanvas_reponses, text=i, command=lambda id_reponse=i: uiReponse_Click(row.index(id_reponse)))
+    uiBtn_reponse.grid(row=irow, column=icol, sticky='nesw')
+    
+  # uiCanvas_reponses.pack()
+  
+
+def uiReponse_Click(i):
+  global nb_points
+  global id_q
+  global tot_q
+
+  id_q_local = id_q.get()
+
+  line = questions_list[id_q_local-1]
+  print(i)
+  if i == 1:
+    nb_points += 1
+    uiMenubar.entryconfigure(4, label=f'Points : {nb_points}')
+    message = ['Vrai', 'Bien joué', 'Super', 'Génial', 'Bravo', 'Juste',]
+    a = random.choice(message)
+    output = f'{a} ! Vous avez {nb_points} points !'
+    messagebox.showinfo(title='La Colle', message=output)
+  else :
+    message = ['Oh non !', 'Elle est où la culture ?', 'Zut !', 'Loupé !', 'Bien tenté !']
+    a = random.choice(message)
+    output = f'{a}\nLa réponse correcte est {line[1]} !'
+    messagebox.showerror(title='La Colle', message=output)
+
+  if id_q_local < tot_q.get():
+    id_q.set(id_q_local+1)
+    create_question()
+
+
+def play():
+  global id_q
+  global nb_points
+  
+  uiImg_question = StringVar()
+
+  uiImg_question.set('pyrite.jpeg')
+
+  uiImg_canvas = Canvas(uiWindow, height=120, bg='grey')
+
+  uiImg_canvas.pack(side=TOP, padx=5, pady=5)
+
+  #uiImg = ImageTk.PhotoImage(file = uiImg_question.get())
+  #uiImg_canvas.create_image(0, 0, image = uiImg, anchor = nesw)
+
+  
+
+  Label(uiWindow, textvariable=uiTxt_question, wraplengt=380).pack()
+  
+  print("c'est parti")
+
+  nb_points = 0
+  uiMenubar.entryconfigure(4, label='Points : 0')
+  answered_q = []
+  id_q.set(1)
+  create_question()
+  # La 2e fois qu'on fait, il s'arrête avant le create_question
+  
+
 def uiBtnRoundsNb_Click():
-  if tot_q.get() > nl:
-    return
-  elif tot_q.get() < 1:
-    return
-  
-  uiClear('')
-
-  uiCanvas_qimages.pack(side=TOP, padx=5, pady=5)
-
-  
+  tot_q_local = tot_q.get()
+  if tot_q_local > 0 and tot_q_local <= nl:
+    uiClear('')
+    play()
 
 
 
-def play(theme):
+def SetRoundsNb(theme):
   # --- Ouverture du fichier ---
   global nl
+  global questions_list
+
   f = open(f'{theme}.csv', encoding='utf-8')
 
   nl = len(f.readlines())
@@ -156,7 +253,7 @@ def play(theme):
 
   print((theme, nl))
 
-  reader = csv.reader(f, delimiter=',')
+  reader = csv.reader(f, delimiter=';')
 
   questions_list = [] # Permet d'éviter la répétition des questions
   for row in reader:
@@ -164,12 +261,11 @@ def play(theme):
   random.shuffle(questions_list)
 
   uiClear('Canvas')
-  uiTxt_welcome.set(f"Entrez le nombre de tours de la partie (entre 1 et {nl}) : ")
+  uiTxt_welcome.set(f"Entrez le nombre de tours de la partie\n(entre 1 et {nl}) : ")
 
-  Entry(uiWindow, width = 15, textvariable = tot_q).pack()
+  Entry(uiWindow, width = 5, textvariable = tot_q).pack()
   Button(uiWindow, text="C'est parti !", command=uiBtnRoundsNb_Click).pack(pady=15)
 
-  return questions_list
 
 def uiSetGrid(themeDict):
   uiGridList = []
@@ -183,11 +279,11 @@ def uiSetGrid(themeDict):
 def uiThemes_Click(v):
   for k, vt in themes_jeu.items():
     if v == vt:
-      play(themes_jeu[k])
+      SetRoundsNb(themes_jeu[k])
       #return
   for k, vt in themes_revision.items():
     if v == vt:
-      play(themes_revision[k])
+      SetRoundsNb(themes_revision[k])
       #return
 
 def uiGetThemes(themeDict):
@@ -197,8 +293,10 @@ def uiGetThemes(themeDict):
   for i, v in enumerate(themeDict.values()):
     print(v)
     irow, icol = uiGridList[i]
-    Button(uiCanvas_themes, text=v.capitalize(), command=lambda: uiThemes_Click(v)).grid(row=irow, column=icol, sticky='nesw')
+    uiBtn_theme = Button(uiCanvas_themes, text=v.capitalize(), command=lambda theme=v: uiThemes_Click(theme)).grid(row=irow, column=icol, sticky='nesw')
   uiCanvas_themes.pack(side=BOTTOM, pady=15)
+  uiMenubar.entryconfigure(3, label='')
+  uiMenubar.entryconfigure(4, label='')
   uiWindow.config(menu=uiMenubar)
 
 def uiBtnPlay_Click():
@@ -230,7 +328,7 @@ while retry == True :
 
 # --- Choix du thème en début de partie ---
   if type == 'a' :
-    print ('\nThèmes :\nA | Culture\tB | Suisse\tC | Histoire\n')
+    print ('\nThèmes :\nA | Culture\tB | Suisse\tC | Histoire\tD | Musique\n')
     c = input('Quel thème voulez-vous étudier ? ') 
   else :
     print ('\nThèmes :\nA | Géologie\tB | Ecologie\tC | Equations différentielles\nD | Génétique\tE | Hydrologie\tF | Chimie organique \nG | Pédologie  \tH | Informatique\n')
@@ -238,7 +336,7 @@ while retry == True :
 
 
 # --- Ouverture du fichier ---
-  questions_list = play(theme(c))
+  questions_list = SetRoundsNb(theme(c))
 
 # --- Choix du nombre de questions en début de partie ---
   repeat = True
@@ -273,8 +371,8 @@ while retry == True :
 
     print(f"{row[0]}\nA | {a}\tB | {b}\tC | {c}\tD | {d}\n")    
     user_input = str(input("Votre réponse : "))
-    print(f'\nJean-Pierre Foucault ==> {bot_answer(user_input, row)} \n')
-    f.seek(0)
+    print(f'\n {bot_answer(user_input, row)} \n')
+    #f.seek(0)
 
 
 # --- Mémorisation des scores ---
@@ -314,9 +412,9 @@ h.close()
 # --- Propose de voir le graphe de la progression ---  
 voir_score = input ('Voulez-vous voir vos scores ? ')
 if voir_score.lower()in oui :
+  print (f'Vous avez obtenu {sum(p)} points sur {sum(s)}.\n'f'La moyenne est de {round(sum(p)/sum(s)*100,2)}%\n')
   plt.plot(x,y)
   plt.show ()
-  print (f'Vous avez obtenu {sum(p)} points sur {sum(s)}.\n'f'La moyenne est de {round(sum(p)/sum(s)*100,2)}%\n')
   print ('\nLe quiz est terminé ! A bientôt !')  
 else :
   print ('\nLe quiz est terminé ! A bientôt !')
