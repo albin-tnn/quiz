@@ -1,17 +1,17 @@
 import os
 import csv
 import random
-import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import MaxNLocator
 from matplotlib.figure import Figure
 from matplotlib.pyplot import *
-from math import sqrt
 from tkinter import *
 import tkinter.font as font
 from PIL import ImageTk,Image
+matplotlib.use('TkAgg')
+# import numpy as np # inutilisé
+# from math import sqrt # inutilisé
 
 themes_jeu = {
   'culture' : 'Culture',
@@ -58,6 +58,7 @@ themes_images = {
 window = Tk()
 window.title('La Colle')
 window.geometry('600x300')
+# window.configure(bg='#F0F0F0') # mettre uniquement si exécuté en local sur Windows
 
 uiMenuEmpty = Menu(window)
 uiMenuEmpty.add_command(label=' ')
@@ -125,10 +126,11 @@ def createGraph():
   s = []
   p = []
   for row in reader_h:
-    x.append(float(row[0]))
-    y.append(float(row[1]))
-    s.append(float(row[2]))
-    p.append(float(row[3]))
+    if len(row) == 4:
+      x.append(float(row[0]))
+      y.append(float(row[1]))
+      s.append(float(row[2]))
+      p.append(float(row[3]))
   h.close()
 
   uiFigure = Figure(figsize=(4,2), facecolor=window['bg'])
