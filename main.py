@@ -2,12 +2,16 @@ import os
 import csv
 import random
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.ticker import MaxNLocator
+from matplotlib.figure import Figure
+from matplotlib.pyplot import *
 from math import sqrt
 from tkinter import *
+import tkinter.font as font
 from PIL import ImageTk,Image
-
-nl = 1
 
 themes_jeu = {
   'culture' : 'Culture',
@@ -53,7 +57,10 @@ themes_images = {
 
 window = Tk()
 window.title('La Colle')
-window.geometry('400x250')
+window.geometry('600x300')
+
+uiMenuEmpty = Menu(window)
+uiMenuEmpty.add_command(label=' ')
 
 uiTxt_welcome = StringVar()
 uiTxt_question = StringVar()
@@ -61,20 +68,22 @@ uiCanvas_reponses = Canvas(window)
 
 questions_list = []
 nb_points = 0
+nl = 1
 id_q = IntVar()
 tot_q = IntVar()
 
 uiCanvas_image = Canvas(window, height=120)
 
 def uiClear(type):
-    list = window.pack_slaves()
-    if type == '':
-      for i in list:
+  list = window.pack_slaves()
+  if type == '':
+    for i in list:
+      i.destroy()
+  else:
+    for i in list:
+      if i.winfo_class() == type:
         i.destroy()
-    else:
-      for i in list:
-        if i.winfo_class() == type:
-          i.destroy()
+  font.nametofont("TkDefaultFont").configure(family="")
 
 def uiHome_Click():
   uiClear('')
@@ -82,10 +91,7 @@ def uiHome_Click():
 
 # --- Fonction : Accueil dans le quiz ---
 def Welcome():
-  uiMenuEmpty = Menu(window)
-  uiMenuEmpty.add_command(label=' ')
   window.config(menu=uiMenuEmpty)
-
 
   uiTxt_welcome.set('Bienvenue dans le quiz : La Colle  \U0001F9D0\n\nPrêt.e à répondre aux questions ?\n\nQue voulez-vous faire ?\n')
 
@@ -94,6 +100,61 @@ def Welcome():
 
   uiBtnPlay = Button(window, text ='Jouer', command=uiBtnPlay_Click).pack(side=LEFT, padx=15, pady=5)
   uiBtnRevise = Button(window, text ='Réviser', command=uiBtnRevise_Click).pack(side=RIGHT, padx=15, pady=5)
+
+def scoreComment(score) :
+  if score == 0 :
+    return 'Bonne nouvelle : Vous ne pourrez que faire mieux la prochaine fois !'
+  elif 0 < score <= 20 :
+    return 'Mettre les réponses au hasard aurait autant d\'efficacité !'
+  elif 20 < score <= 40 :
+    return 'Vous êtes encore loin du 100%, réessayez ! '
+  elif 40 < score <= 60 :
+    return 'Pas fameux ! Vous êtes capable de faire mieux !'
+  elif 60 < score <= 80 :
+    return 'Pas mal !'
+  elif 80 < score < 100 :
+    return 'Bravo !'
+  elif score == 100 :
+    return 'Félicitations \U0001F973 \U0001F973 \U0001F973'
+
+def createGraph():
+  h = open ('progression.csv', 'r')
+  reader_h = csv.reader(h, delimiter = ',')
+  x = []
+  y = []
+  s = []
+  p = []
+  for row in reader_h:
+    x.append(float(row[0]))
+    y.append(float(row[1]))
+    s.append(float(row[2]))
+    p.append(float(row[3]))
+  h.close()
+
+  uiFigure = Figure(figsize=(4,2), facecolor=window['bg'])
+  uiSubPlot = uiFigure.add_subplot()
+  uiSubPlot.plot(x,y)
+  uiSubPlot.set_ylim([0, 100])
+  uiSubPlot.set_xlim([0, tot_q.get()])
+  uiSubPlot.yaxis.set_major_locator(MultipleLocator(20))
+  uiSubPlot.xaxis.set_major_locator(MaxNLocator(integer=True))
+  uiSubPlot.set_ylabel("Score (%)")
+  #uiSubPlot.set_xlabel("Questions")
+  uiSubPlot.patch.set_alpha(0.0)
+  uiFigure.tight_layout()
+  uiFigure_canvas = FigureCanvasTkAgg(uiFigure, master=window)
+  uiFigure_canvas.get_tk_widget().pack()
+
+def endGame():
+  uiClear('')
+  window.config(menu=uiMenuEmpty)
+
+  score = nb_points/tot_q.get()*100
+  Label(window, text=f'La partie est terminée !\nVotre score final est de {round(score, 2)} % ({nb_points} points sur {tot_q.get()}).\n{scoreComment(score)}', wraplengt=550).pack(pady=5)
+  createGraph()
+  Button(window, text='Revenir au menu', command=uiHome_Click).pack()
+
+
 
 def uiSetImage(image):
   uiImg = Image.open('images/' + image)
@@ -114,11 +175,18 @@ def create_question():
 
   uiTxt_question.set(row[0])
 
-  uiMenubar.entryconfigure(3,uiMenubar.entryconfigure(3, label=f'Question {id_q_local}/{tot_q.get()}'))
+  if theme == 'informatique.csv':
+    font.nametofont("TkDefaultFont").configure(family="Consolas")
+    uiMenubar.entryconfigure(3, label=f'Index {id_q_local-1}/{tot_q.get()-1}') # Easter egg : renvoie l'index de la question en commençant par 0
+  else:
+    font.nametofont("TkDefaultFont").configure(family="")
+    uiMenubar.entryconfigure(3, label=f'Question {id_q_local}/{tot_q.get()}')
 
-  uiImageRef = row[5]
+  uiImageRef = ''
+  if len(row) > 5:
+    uiImageRef = row[5]
 
-  if uiImageRef == '':
+  if uiImageRef == '' or uiImageRef == ' ' or uiImageRef == "''":
     uiSetImage(themes_images[theme[0:len(theme)-4]])
   else: uiSetImage(uiImageRef)
 
@@ -136,11 +204,15 @@ def create_question():
   for i in reponses:
     print((row.index(i), reponses.index(i)))
     irow, icol = uiGridList[reponses.index(i)]
-    uiBtn_reponse = Button(uiCanvas_reponses, text=i, command=lambda id_reponse=i: QuizAnswer_Click(row.index(id_reponse)))
+    uiBtn_reponse = Button(uiCanvas_reponses, text=i, wraplengt=250, command=lambda id_reponse=i: QuizAnswer_Click(row.index(id_reponse)))
     uiBtn_reponse.grid(row=irow, column=icol, sticky='nesw')
-    
-  # uiCanvas_reponses.pack()
-  
+
+def writeProgression(id_q_local, tot_q_local):
+  score = nb_points/tot_q_local*100
+  g = open ('progression.csv', 'a')
+  writer = csv.writer(g, delimiter = ',')
+  writer.writerow([id_q_local, score, tot_q_local, nb_points])
+  g.close()
 
 def QuizAnswer_Click(i):
   global nb_points
@@ -163,10 +235,15 @@ def QuizAnswer_Click(i):
     a = random.choice(message)
     output = f'{a}\nLa réponse correcte est {line[1]} !'
     messagebox.showerror(title='La Colle', message=output)
+ 
+  tot_q_local = tot_q.get()
+  writeProgression(id_q_local, tot_q_local)
 
-  if id_q_local < tot_q.get():
+  if id_q_local < tot_q_local:
     id_q.set(id_q_local+1)
     create_question()
+  else:
+    endGame()
 
 
 def play():
@@ -176,10 +253,14 @@ def play():
   
   uiCanvas_image = Canvas(window, height=120)
   uiCanvas_image.pack(side=TOP, padx=5, pady=5)
-  Label(window, textvariable=uiTxt_question, wraplengt=380).pack()
+  Label(window, textvariable=uiTxt_question, wraplengt=550).pack()
+
+  e = open ('progression.csv', 'w') # Permet d'avoir un fichier avec seulement les scores de cette partie
+  e.close()
 
   nb_points = 0
   uiMenubar.entryconfigure(4, label='Points : 0')
+  writeProgression(0, tot_q.get())
   id_q.set(1)
   create_question()
 
@@ -198,20 +279,20 @@ def SetRoundsNb(themeArg):
 
   flist = []
   nl = 0
-  questions_list = [] # Permet d'éviter la répétition des questions
+  questions_list = []
 
   themeDict, theme = themeArg
 
   if theme == "tout_revision":
+    # pour chaque fichier, si le fichier est dans themes_revision, ajoute le fichier à flist
     for f in os.listdir("./questions"):
       if f.endswith(".csv") and f[0:len(f)-4] in themes_revision.keys():
         flist.append((open(f'questions/{f}', encoding='utf-8'), f))
-    # pour chaque fichier, si le fichier est dans themes_revision, ajoute le fichier à flist
   elif theme == "tout_jeu":
+    # pour chaque fichier, si le fichier est dans themes_jeu, ajoute le fichier à flist
     for f in os.listdir("./questions"):
       if f.endswith(".csv") and f[0:len(f)-4] in themes_jeu.keys():
         flist.append((open(f'questions/{f}', encoding='utf-8'), f))
-    # pour chaque fichier, si le fichier est dans themes_jeu, ajoute le fichier à flist
   else:
     flist.append((open(f'questions/{theme}.csv', encoding='utf-8'), theme+'.csv'))
 
@@ -223,7 +304,7 @@ def SetRoundsNb(themeArg):
     for row in reader:
       questions_list.append((row, fpath))
 
-  random.shuffle(questions_list)
+  random.shuffle(questions_list) # Questions dans un ordre aléatoire
 
   uiClear('Canvas')
   uiTxt_welcome.set(f"Entrez le nombre de tours de la partie\n(entre 1 et {nl}) : ")
@@ -234,8 +315,8 @@ def SetRoundsNb(themeArg):
 
 def uiSetGrid(themeDict):
   uiGridList = []
-  # gridSize = int(sqrt(len(themeDict)) + 0.5) # grille carrée
-  gridSize = int(len(themeDict)/2 + 0.5) # grille à 2 colonnes
+  # gridSize = int(sqrt(len(themeDict)) + 0.5) # si grille carrée
+  gridSize = int(len(themeDict)/2 + 0.5) # si grille à 2 colonnes
   for irow in range(1, gridSize+1):
     for icol in range(1, 3):
       uiGridList.append((irow, icol))

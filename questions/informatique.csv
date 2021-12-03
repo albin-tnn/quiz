@@ -1,6 +1,6 @@
 On ne sait pas quoi répondre au professeur. Quelle réponse a le plus de probabilité d'être juste ?;une boucle;une condition;une fonction;une string;
 Quel est le type de la variable a dans a = input ('Entrez un nombre : ');chaîne de caractères;entier;flottant;null;
-Que renvoie un opérateur de comparaison(==; !=; <=; ...) ?;un booléen;un entier;un flottant;null;
+Que renvoie un opérateur de comparaison(==, !=, <=, ...) ?;un booléen;un entier;un flottant;null;
 Que renvoie bool(5) ?;True;False;Null;On ne peut pas faire ça;
 Que renvoie False or not False ?;True;False;Null;On ne peut pas faire ça;
 Que renvoie True or False ?;True;False;Null;On ne peut pas faire ça;
