@@ -1,16 +1,14 @@
 A faire en priorité :
 
-Finir le code
-Changer themes_jeu / themes_revision par des listes
-Mettre des photos
-Changer peut-être les dimensions ; certaines réponses sortent de la fenêtre
 Vérifier qu'il ne reste pas des parties de code devenue obsolète
-Réordonner les fonctions, enlever le préfixe ui à certains endroits ?
 Mettre des commentaires pour expliquer
+Agrandir la taille de la police pour la présentation
 
 Idée à déterminer :
 
 L'avis du public
 Proposer un lien wikipédia si le joueur veut se renseigner après avoir fait faux (ou juste aussi ?)
 Garder les scores et présenter des statistiques (Graphe, moyenne)
-Mettre un temps limite par question 
+Mettre un temps limite par question (FAIT!) BRAVO !!!
+
+Proposition : Demander si le joueur veut recommencer ou quitter après la partie et si il veut quitter, proposer à ce moment le graphe des progressions (qui gardent en mémoire les points de toutes les parties) 

@@ -7,8 +7,10 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib.figure import Figure
 from matplotlib.pyplot import *
 from tkinter import *
+from tkinter.ttk import Progressbar
 import tkinter.font as font
 from PIL import ImageTk,Image
+import time
 matplotlib.use('TkAgg')
 # import numpy as np # inutilisé
 # from math import sqrt # inutilisé
@@ -21,9 +23,6 @@ themes_jeu = {
   'citations' : 'Citations',
   'tout_jeu' : 'Tous'
 }
-
-themes_jeu2 = ['culture','suisse','histoire','musique','citation','tout_jeu']
-theme_revision2 = ['géologie','écologie','equadiffs','genetique','hydrologie','chimie_orga','pedologie','informatique','tout_revision']
 
 themes_revision = {
   'géologie' : 'Géologie',
@@ -57,50 +56,89 @@ themes_images = {
 
 window = Tk()
 window.title('La Colle')
-window.geometry('600x300')
+window.geometry('600x400')
+uiWindowBig = False
 # window.configure(bg='#F0F0F0') # mettre uniquement si exécuté en local sur Windows
-
-uiMenuEmpty = Menu(window)
-uiMenuEmpty.add_command(label=' ')
 
 uiTxt_welcome = StringVar()
 uiTxt_question = StringVar()
 uiCanvas_reponses = Canvas(window)
+uiCanvas_progress = Canvas(window, height=30)
+uiProgressbar = Progressbar(uiCanvas_progress, length=500)
 
 questions_list = []
 nb_points = 0
 nl = 1
 id_q = IntVar()
 tot_q = IntVar()
+timerOn = IntVar()
+timerSeconds = IntVar()
+uiPause = False
+timerList = []
 
-uiCanvas_image = Canvas(window, height=120)
+uiCanvas_image = Canvas(window, height=int(window.winfo_height()/3))
 
 def uiClear(type):
+  global uiMenuLabel
+  global uiMenuPoints
+
   list = window.pack_slaves()
   if type == '':
+    uiMenuLabel.config(text=' ')
+    uiMenuPoints.config(text=' ')
     for i in list:
-      i.destroy()
+      print(str(i))
+      if str(i) != '.!canvas4':
+        i.destroy()
   else:
     for i in list:
-      if i.winfo_class() == type:
+      if i.winfo_class() == type and str(i) != '.!canvas4':
         i.destroy()
   font.nametofont("TkDefaultFont").configure(family="")
+
 
 def uiHome_Click():
   uiClear('')
   Welcome()
 
+
+uiMenubar = Canvas(window, height=30)
+uiMenubar.myId = 'menubar'
+uiMenuBtn = Button(uiMenubar, text="Retour", command=uiHome_Click)
+uiMenuLabel = Label(uiMenubar)
+uiMenuPoints = Label(uiMenubar)
+uiMenuBtn.pack(side=LEFT)
+uiMenuPoints.pack(side=RIGHT, padx=50)
+uiMenuLabel.pack(side=RIGHT, padx=10)
+
+
+def uiSetWindowSize():
+  global uiWindowBig
+
+  uiWindowBig = not uiWindowBig
+  if uiWindowBig:
+    window.geometry('1000x600')
+    font.nametofont("TkDefaultFont").configure(size=16)
+    rcParams.update({'font.size': 16})
+  else:
+    window.geometry('600x400')
+    font.nametofont("TkDefaultFont").configure(size=10)
+    rcParams.update({'font.size': 10})
+  
+
 # --- Fonction : Accueil dans le quiz ---
 def Welcome():
-  window.config(menu=uiMenuEmpty)
+  uiMenuBtn.pack_forget()
+  uiMenubar.pack(side=TOP, fill=BOTH)
 
-  uiTxt_welcome.set('Bienvenue dans le quiz : La Colle  \U0001F9D0\n\nPrêt.e à répondre aux questions ?\n\nQue voulez-vous faire ?\n')
+  uiTxt_welcome.set('Bienvenue dans le quiz : La Colle \U0001F9D0\n\nPrêt.e à répondre aux questions ?\n\nQue voulez-vous faire ?\n')
 
   uiLabel_welcome = Label(window, textvariable=uiTxt_welcome)
   uiLabel_welcome.pack(side=TOP, pady=15)
 
-  uiBtnPlay = Button(window, text ='Jouer', command=uiBtnPlay_Click).pack(side=LEFT, padx=15, pady=5)
-  uiBtnRevise = Button(window, text ='Réviser', command=uiBtnRevise_Click).pack(side=RIGHT, padx=15, pady=5)
+  Button(window, text ='Jouer', command=uiBtnPlay_Click).pack(side=LEFT, padx=50, pady=5)
+  Button(window, text ='Réviser', command=uiBtnRevise_Click).pack(side=RIGHT, padx=50, pady=5)
+  Button(window, text = 'Taille de la fenêtre', command=uiSetWindowSize).pack(side=BOTTOM, pady=20)
 
 def scoreComment(score) :
   if score == 0 :
@@ -133,7 +171,10 @@ def createGraph():
       p.append(float(row[3]))
   h.close()
 
-  uiFigure = Figure(figsize=(4,2), facecolor=window['bg'])
+  size = (4,2)
+  if uiWindowBig == True:
+    size = (6,3)
+  uiFigure = Figure(figsize=size, facecolor=window['bg'])
   uiSubPlot = uiFigure.add_subplot()
   uiSubPlot.plot(x,y)
   uiSubPlot.set_ylim([0, 100])
@@ -148,27 +189,65 @@ def createGraph():
   uiFigure_canvas.get_tk_widget().pack()
 
 def endGame():
+  global uiMenuLabel
+  global uiMenuPoints
+
   uiClear('')
-  window.config(menu=uiMenuEmpty)
+  uiMenuLabel.config(text=' ')
+  uiMenuPoints.config(text=' ')
 
   score = nb_points/tot_q.get()*100
-  Label(window, text=f'La partie est terminée !\nVotre score final est de {round(score, 2)} % ({nb_points} points sur {tot_q.get()}).\n{scoreComment(score)}', wraplengt=550).pack(pady=5)
+
+  timerTot = 0
+  for t in timerList:
+    print(t)
+    timerTot += t
+
+  timeMinSec = str(time.strftime("%M min %S", time.gmtime(int(timerTot))))
+
+  if timeMinSec[0:2] == '00':
+    timeMinSec = timeMinSec[len(timeMinSec)-2:]
+
+  Label(window, text=f'La partie est terminée, elle a duré {timeMinSec} secondes !\nVotre score final est de {round(score, 2)} % ({nb_points} points sur {tot_q.get()}).\n{scoreComment(score)}', wraplengt=550).pack(pady=5)
   createGraph()
   Button(window, text='Revenir au menu', command=uiHome_Click).pack()
 
+def countdown(t):
+  global timerSeconds
+  if uiPause == True or uiProgressbar.winfo_exists() == 0:
+    return
+  
+  timerSeconds.set(int(t))
+  uiProgressbar['value'] -= 0.1
 
+  if t > 0:
+    window.after(10, countdown, t-0.01)
+  else:
+    QuizAnswer_Click(-1)
+   
 
 def uiSetImage(image):
+  uiSize_img = int(window.winfo_height()/3)
   uiImg = Image.open('images/' + image)
-  uiImg_newWidth = int(uiImg.width/uiImg.height*120)
-  uiImg_resized = uiImg.resize((uiImg_newWidth,120), Image.ANTIALIAS)
+  uiImg_newWidth = int(uiImg.width/uiImg.height*uiSize_img)
+  uiImg_resized = uiImg.resize((uiImg_newWidth,uiSize_img), Image.ANTIALIAS)
   uiCanvas_image.image = ImageTk.PhotoImage(uiImg_resized)
-  uiCanvas_image.create_image(190, 60, image=uiCanvas_image.image, anchor='center')
+  uiCanvas_image.create_image(190, uiSize_img/2, image=uiCanvas_image.image, anchor='center')
 
-def create_question():
+
+def createQuestion():
   global uiCanvas_reponses
   global uiWaitVar
   global uiTxt_question
+  global uiPause
+  global timerList
+
+  uiPause = False
+  timerList.append(time.time())
+  uiProgressbar['value'] = 100
+
+  if timerOn.get() == 1:
+    countdown(10)
 
   id_q_local = id_q.get()
   print(id_q_local)
@@ -179,10 +258,10 @@ def create_question():
 
   if theme == 'informatique.csv':
     font.nametofont("TkDefaultFont").configure(family="Consolas")
-    uiMenubar.entryconfigure(3, label=f'Index {id_q_local-1}/{tot_q.get()-1}') # Easter egg : renvoie l'index de la question en commençant par 0
+    uiMenuLabel.config(text=f'Index {id_q_local-1}/{tot_q.get()-1}') # Easter egg : renvoie l'index de la question en commençant par 0
   else:
     font.nametofont("TkDefaultFont").configure(family="")
-    uiMenubar.entryconfigure(3, label=f'Question {id_q_local}/{tot_q.get()}')
+    uiMenuLabel.config(text=f'Question {id_q_local}/{tot_q.get()}')
 
   uiImageRef = ''
   if len(row) > 5:
@@ -220,18 +299,29 @@ def QuizAnswer_Click(i):
   global nb_points
   global id_q
   global tot_q
+  global uiPause
+
+  uiPause = True
 
   id_q_local = id_q.get()
 
+  timerList[id_q_local-1] = time.time() - timerList[id_q_local-1]
+
   line, theme = questions_list[id_q_local-1]
   print(i)
+
   if i == 1:
     nb_points += 1
-    uiMenubar.entryconfigure(4, label=f'Points : {nb_points}')
+    uiMenuPoints.config(text=f'Points : {nb_points}')
     message = ['Vrai', 'Bien joué', 'Super', 'Génial', 'Bravo', 'Juste',]
     a = random.choice(message)
     output = f'{a} ! Vous avez {nb_points} points !'
     messagebox.showinfo(title='La Colle', message=output)
+  elif i == -1:
+    message = ['Le temps est passé !', 'Pas eu le temps ?', 'Trop tard !', 'Les 10 secondes sont écoulées !']
+    a = random.choice(message)
+    output = f'{a}\nLa réponse correcte est {line[1]} !'
+    messagebox.showerror(title='La Colle', message=output)
   else :
     message = ['Oh non !', 'Elle est où la culture ?', 'Zut !', 'Loupé !', 'Bien tenté !']
     a = random.choice(message)
@@ -243,7 +333,7 @@ def QuizAnswer_Click(i):
 
   if id_q_local < tot_q_local:
     id_q.set(id_q_local+1)
-    create_question()
+    createQuestion()
   else:
     endGame()
 
@@ -252,8 +342,20 @@ def play():
   global id_q
   global nb_points
   global uiCanvas_image
+  global uiCanvas_progress
+  global uiProgressbar
+  global timerList
+
+  timerList = []
+
+  if timerOn.get() == 1:
+    uiCanvas_progress = Canvas(window, height=30)
+    uiProgressbar = Progressbar(uiCanvas_progress, length=int(window.winfo_width())-100)
+    uiCanvas_progress.pack()
+    uiProgressbar.pack(side=LEFT, padx=20)
+    Label(uiCanvas_progress, textvariable=timerSeconds, width=15).pack(side=RIGHT, padx=20)
   
-  uiCanvas_image = Canvas(window, height=120)
+  uiCanvas_image = Canvas(window, height=int(window.winfo_height()/3))
   uiCanvas_image.pack(side=TOP, padx=5, pady=5)
   Label(window, textvariable=uiTxt_question, wraplengt=550).pack()
 
@@ -261,10 +363,10 @@ def play():
   e.close()
 
   nb_points = 0
-  uiMenubar.entryconfigure(4, label='Points : 0')
+  uiMenuPoints.config(text='Points : 0')
   writeProgression(0, tot_q.get())
   id_q.set(1)
-  create_question()
+  createQuestion()
 
 
 def uiBtnRoundsNb_Click():
@@ -274,7 +376,7 @@ def uiBtnRoundsNb_Click():
     play()
 
 
-def SetRoundsNb(themeArg):
+def setRoundsNb(themeArg):
   # --- Ouverture du fichier ---
   global nl
   global questions_list
@@ -312,6 +414,9 @@ def SetRoundsNb(themeArg):
   uiTxt_welcome.set(f"Entrez le nombre de tours de la partie\n(entre 1 et {nl}) : ")
 
   Entry(window, width = 5, textvariable = tot_q).pack()
+
+  Checkbutton(window, text="Compte à rebours", variable=timerOn, onvalue=1, offvalue=0).pack(pady=15)
+
   Button(window, text="C'est parti !", command=uiBtnRoundsNb_Click).pack(pady=15)
 
 
@@ -325,39 +430,32 @@ def uiSetGrid(themeDict):
   return uiGridList
 
 
-def DisplayThemes(themeDict):
+def displayThemes(themeDict):
   uiClear('Button')
+  uiMenuBtn.pack(side=LEFT)
+  uiMenuPoints.config(text=' ')
+  uiMenuLabel.config(text=' ')
+  uiMenubar.pack()
   uiCanvas_themes = Canvas(window)
   uiGridList = uiSetGrid(themeDict)
   i = 0
   for k, v in themeDict.items():
     print(v)
     irow, icol = uiGridList[i]
-    uiBtn_theme = Button(uiCanvas_themes, text=v, command=lambda theme=k: SetRoundsNb((themeDict, theme))).grid(row=irow, column=icol, sticky='nesw')
+    uiBtn_theme = Button(uiCanvas_themes, text=v, command=lambda theme=k: setRoundsNb((themeDict, theme))).grid(row=irow, column=icol, sticky='nesw')
     i += 1
   uiCanvas_themes.pack(side=BOTTOM, pady=15)
-  uiMenubar.entryconfigure(3, label=' ')
-  uiMenubar.entryconfigure(4, label=' ')
-  window.config(menu=uiMenubar)
 
 def uiBtnPlay_Click():
   uiTxt_welcome.set('Sur quel thème voulez-vous jouer ?')
-  DisplayThemes(themes_jeu)
+  displayThemes(themes_jeu)
   
 def uiBtnRevise_Click():
   uiTxt_welcome.set('Quel thème voulez-vous réviser ?')
-  DisplayThemes(themes_revision)  
+  displayThemes(themes_revision)  
 
 
 # --- Bienvenue ! ---
-uiMenubar = Menu(window)
-uiMenu1 = Menu(uiMenubar, tearoff=0)
-uiMenubar.add_command(label="Retour", command=uiHome_Click)
-uiMenubar.add_command(label='           ')
-uiMenubar.add_command(label=' ')
-uiMenubar.add_command(label=' ')
-
-
 uiClear('')
 Welcome()
 window.mainloop()
