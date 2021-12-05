@@ -11,6 +11,7 @@ from tkinter.ttk import Progressbar
 import tkinter.font as font
 from PIL import ImageTk,Image
 import time
+import emoji 
 matplotlib.use('TkAgg')
 # import numpy as np # inutilisé
 # from math import sqrt # inutilisé
@@ -57,8 +58,10 @@ themes_images = {
 window = Tk()
 window.title('La Colle')
 window.geometry('600x400')
-uiWindowBig = False
-# window.configure(bg='#F0F0F0') # mettre uniquement si exécuté en local sur Windows
+isWindowBig = False
+
+if os.name == 'nt': # si exécuté sur Windows
+  window.configure(bg='#F0F0F0') # évite un bug lors de la création du graph
 
 uiTxt_welcome = StringVar()
 uiTxt_question = StringVar()
@@ -73,7 +76,7 @@ id_q = IntVar()
 tot_q = IntVar()
 timerOn = IntVar()
 timerSeconds = IntVar()
-uiPause = False
+isPaused = False
 timerList = []
 
 uiCanvas_image = Canvas(window, height=int(window.winfo_height()/3))
@@ -113,10 +116,10 @@ uiMenuLabel.pack(side=RIGHT, padx=10)
 
 
 def uiSetWindowSize():
-  global uiWindowBig
+  global isWindowBig
 
-  uiWindowBig = not uiWindowBig
-  if uiWindowBig:
+  isWindowBig = not isWindowBig
+  if isWindowBig:
     window.geometry('1000x600')
     font.nametofont("TkDefaultFont").configure(size=16)
     rcParams.update({'font.size': 16})
@@ -154,7 +157,8 @@ def scoreComment(score) :
   elif 80 < score < 100 :
     return 'Bravo !'
   elif score == 100 :
-    return 'Félicitations \U0001F973 \U0001F973 \U0001F973'
+    return 'Félicitations'
+
 
 def createGraph():
   h = open ('progression.csv', 'r')
@@ -172,7 +176,7 @@ def createGraph():
   h.close()
 
   size = (4,2)
-  if uiWindowBig == True:
+  if window.winfo_width() > 800 and window.winfo_height() > 500:
     size = (6,3)
   uiFigure = Figure(figsize=size, facecolor=window['bg'])
   uiSubPlot = uiFigure.add_subplot()
@@ -208,13 +212,13 @@ def endGame():
   if timeMinSec[0:2] == '00':
     timeMinSec = timeMinSec[len(timeMinSec)-2:]
 
-  Label(window, text=f'La partie est terminée, elle a duré {timeMinSec} secondes !\nVotre score final est de {round(score, 2)} % ({nb_points} points sur {tot_q.get()}).\n{scoreComment(score)}', wraplengt=550).pack(pady=5)
+  Label(window, text=f'La partie est terminée, elle a duré {timeMinSec} secondes !\nVotre score final est de {round(score, 2)} % ({round(nb_points, 1)} points sur {tot_q.get()}).\n{scoreComment(score)}', wraplengt=550).pack(pady=5)
   createGraph()
   Button(window, text='Revenir au menu', command=uiHome_Click).pack()
 
 def countdown(t):
   global timerSeconds
-  if uiPause == True or uiProgressbar.winfo_exists() == 0:
+  if isPaused == True or uiProgressbar.winfo_exists() == 0:
     return
   
   timerSeconds.set(int(t))
@@ -239,11 +243,10 @@ def createQuestion():
   global uiCanvas_reponses
   global uiWaitVar
   global uiTxt_question
-  global uiPause
+  global isPaused
   global timerList
 
-  uiPause = False
-  timerList.append(time.time())
+  isPaused = False
   uiProgressbar['value'] = 100
 
   if timerOn.get() == 1:
@@ -288,6 +291,8 @@ def createQuestion():
     uiBtn_reponse = Button(uiCanvas_reponses, text=i, wraplengt=250, command=lambda id_reponse=i: QuizAnswer_Click(row.index(id_reponse)))
     uiBtn_reponse.grid(row=irow, column=icol, sticky='nesw')
 
+  timerList.append(time.time())
+
 def writeProgression(id_q_local, tot_q_local):
   score = nb_points/tot_q_local*100
   g = open ('progression.csv', 'a')
@@ -299,23 +304,38 @@ def QuizAnswer_Click(i):
   global nb_points
   global id_q
   global tot_q
-  global uiPause
+  global isPaused
 
-  uiPause = True
+  isPaused = True
 
   id_q_local = id_q.get()
 
   timerList[id_q_local-1] = time.time() - timerList[id_q_local-1]
+  if os.name == 'nt':
+        timerList[id_q_local-1] -= timerList[id_q_local-1]/3 # Correcton d'un bug sur Windows où le temps calculé est plus long que la réalité
 
   line, theme = questions_list[id_q_local-1]
   print(i)
+  print(timerList[id_q_local-1])
 
   if i == 1:
-    nb_points += 1
-    uiMenuPoints.config(text=f'Points : {nb_points}')
-    message = ['Vrai', 'Bien joué', 'Super', 'Génial', 'Bravo', 'Juste',]
+    message = ['Vrai', 'Bien joué', 'Super', 'Génial', 'Bravo', 'Juste']
     a = random.choice(message)
-    output = f'{a} ! Vous avez {nb_points} points !'
+
+    add_points = 0
+
+    if timerOn.get() == 1:
+      points_ponderation = timerList[id_q_local-1] - 4
+      if points_ponderation > 1:
+        add_points += 1 / points_ponderation
+        b = [", mais attention au temps", ", mais vous n'avez pas répondu assez vite"]
+        a += random.choice(b)
+      else: add_points += 1
+    else:
+      add_points += 1
+    nb_points += add_points
+    uiMenuPoints.config(text=f'Points : {round(nb_points, 1)}')
+    output = f'{a} ! Vous gagnez {round(add_points, 1)} point supplémentaire.'
     messagebox.showinfo(title='La Colle', message=output)
   elif i == -1:
     message = ['Le temps est passé !', 'Pas eu le temps ?', 'Trop tard !', 'Les 10 secondes sont écoulées !']
@@ -415,7 +435,7 @@ def setRoundsNb(themeArg):
 
   Entry(window, width = 5, textvariable = tot_q).pack()
 
-  Checkbutton(window, text="Compte à rebours", variable=timerOn, onvalue=1, offvalue=0).pack(pady=15)
+  Checkbutton(window, text="Compte à rebours (le temps compte pour le score !)", variable=timerOn, onvalue=1, offvalue=0).pack(pady=15)
 
   Button(window, text="C'est parti !", command=uiBtnRoundsNb_Click).pack(pady=15)
 
