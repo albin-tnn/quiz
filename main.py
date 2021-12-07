@@ -1,3 +1,8 @@
+# Quiz
+# Projet dans le cadre du cours de programmation I
+# Auteur.e.s : Rémi Stamp, Albin Tanné, Johanna Puglia
+
+
 import os
 import csv
 import random
@@ -11,10 +16,8 @@ from tkinter.ttk import Progressbar
 import tkinter.font as font
 from PIL import ImageTk,Image
 import time
-import emoji 
 matplotlib.use('TkAgg')
-# import numpy as np # inutilisé
-# from math import sqrt # inutilisé
+
 
 themes_jeu = {
   'culture' : 'Culture',
@@ -61,7 +64,7 @@ window.geometry('600x400')
 isWindowBig = False
 
 if os.name == 'nt': # si exécuté sur Windows
-  window.configure(bg='#F0F0F0') # évite un bug lors de la création du graph
+  window.configure(bg='#F0F0F0') # évite un bug lors de la création du graphe
 
 uiTxt_welcome = StringVar()
 uiTxt_question = StringVar()
@@ -72,38 +75,45 @@ uiProgressbar = Progressbar(uiCanvas_progress, length=500)
 questions_list = []
 nb_points = 0
 nl = 1
-id_q = IntVar()
-tot_q = IntVar()
-timerOn = IntVar()
-timerSeconds = IntVar()
-isPaused = False
-timerList = []
+id_q = IntVar() # Index de la question
+tot_q = IntVar() # Nombre de tours choisis par l'utilisateur
+tot_q.set(1)
+
+# Compte à rebours (càr.)
+timerOn = IntVar() # Valeur booléenne, 1 si utilisateur utilise le càr.
+timerVal = IntVar() # Temps du càr. défini par l'utilisateur
+timerVal.set(10)
+timerSeconds = IntVar() # Temps restant affiché en direct
+isPaused = False # Pause quand réponse choisie ou càr. à 0
+timerList = [] # Liste des temps passés sur chaque question, pour afficher le total à la fin
 
 uiCanvas_image = Canvas(window, height=int(window.winfo_height()/3))
+uiEntry_timer = Entry(window, width=5, textvariable=timerVal)
+uiLabel_timer = Label(window, text='Entrez le temps du compte à rebours (en secondes) :')
 
-def uiClear(type):
+
+def uiClear(objType):
   global uiMenuLabel
   global uiMenuPoints
 
-  list = window.pack_slaves()
-  if type == '':
+  objList = window.pack_slaves()
+  if objType == '': # Supprime tous les objets de la fenètre, sauf canvas4 (qui contient le bouton Retour)
     uiMenuLabel.config(text=' ')
     uiMenuPoints.config(text=' ')
-    for i in list:
+    for i in objList:
       print(str(i))
       if str(i) != '.!canvas4':
-        i.destroy()
+        i.pack_forget()
   else:
-    for i in list:
-      if i.winfo_class() == type and str(i) != '.!canvas4':
-        i.destroy()
+    for i in objList: # Supprime tous les objets du type spécifié
+      if i.winfo_class() == objType and str(i) != '.!canvas4':
+        i.pack_forget()
   font.nametofont("TkDefaultFont").configure(family="")
 
 
 def uiHome_Click():
   uiClear('')
   Welcome()
-
 
 uiMenubar = Canvas(window, height=30)
 uiMenubar.myId = 'menubar'
@@ -134,7 +144,7 @@ def Welcome():
   uiMenuBtn.pack_forget()
   uiMenubar.pack(side=TOP, fill=BOTH)
 
-  uiTxt_welcome.set('Bienvenue dans le quiz : La Colle \U0001F9D0\n\nPrêt.e à répondre aux questions ?\n\nQue voulez-vous faire ?\n')
+  uiTxt_welcome.set('Bienvenue dans le quiz : La Colle \n\nPrêt.e à répondre aux questions ?\n\nQue voulez-vous faire ?\n')
 
   uiLabel_welcome = Label(window, textvariable=uiTxt_welcome)
   uiLabel_welcome.pack(side=TOP, pady=15)
@@ -143,6 +153,312 @@ def Welcome():
   Button(window, text ='Réviser', command=uiBtnRevise_Click).pack(side=RIGHT, padx=50, pady=5)
   Button(window, text = 'Taille de la fenêtre', command=uiSetWindowSize).pack(side=BOTTOM, pady=20)
 
+def uiBtnPlay_Click():
+  uiTxt_welcome.set('Sur quel thème voulez-vous jouer ?')
+  displayThemes(themes_jeu)
+  
+def uiBtnRevise_Click():
+  uiTxt_welcome.set('Quel thème voulez-vous réviser ?')
+  displayThemes(themes_revision)
+
+# --- Retourne une liste des positions de chaque élément d'une liste dans une grille ---
+def uiSetGrid(itemsList):
+  uiGridList = []
+  # gridSize = int(sqrt(len(themeDict)) + 0.5) # si grille carrée
+  gridSize = int(len(itemsList)/2 + 0.5) # si grille à 2 colonnes
+  for irow in range(1, gridSize+1):
+    for icol in range(1, 3):
+      uiGridList.append((irow, icol))
+  return uiGridList
+
+# --- Affiche les boutons pour chaque thème dans une grille ---
+def displayThemes(themeDict):
+  uiClear('Button')
+  uiMenuBtn.pack(side=LEFT)
+  uiMenuPoints.config(text=' ')
+  uiMenuLabel.config(text=' ')
+  uiMenubar.pack()
+  uiCanvas_themes = Canvas(window)
+  uiGridList = uiSetGrid(themeDict)
+  i = 0
+  for k, v in themeDict.items():
+    print(v)
+    irow, icol = uiGridList[i]
+    uiBtn_theme = Button(uiCanvas_themes, text=v, command=lambda theme=k: setRoundsNb((themeDict, theme))).grid(row=irow, column=icol, sticky='nesw')
+    i += 1
+  uiCanvas_themes.pack(side=BOTTOM, pady=15)
+
+# --- Menu pour entrer le nombre de tours et choisir l'utilisation ou non du compte à rebours
+def setRoundsNb(themeArg):
+  # --- Ouverture du fichier ---
+  global nl
+  global questions_list
+  
+  flist = []
+  nl = 0
+  questions_list = []
+
+  themeDict, theme = themeArg
+
+  if theme == "tout_revision":
+    # pour chaque fichier, si le fichier est dans themes_revision, ajoute le fichier à flist
+    for f in os.listdir("./questions"):
+      if f.endswith(".csv") and f[0:len(f)-4] in themes_revision.keys():
+        flist.append((open(f'questions/{f}', encoding='utf-8'), f))
+  elif theme == "tout_jeu":
+    # pour chaque fichier, si le fichier est dans themes_jeu, ajoute le fichier à flist
+    for f in os.listdir("./questions"):
+      if f.endswith(".csv") and f[0:len(f)-4] in themes_jeu.keys(): 
+        flist.append((open(f'questions/{f}', encoding='utf-8'), f))
+  else:
+    flist.append((open(f'questions/{theme}.csv', encoding='utf-8'), theme+'.csv'))
+
+  for f, fpath in flist:
+    nl += len(f.readlines())
+    f.seek(0)
+    print((theme, nl))
+    reader = csv.reader(f, delimiter=';')
+    for row in reader:
+      questions_list.append((row, fpath))
+
+  random.shuffle(questions_list) # Questions dans un ordre aléatoire
+
+  uiClear('Canvas')
+  uiTxt_welcome.set(f"Entrez le nombre de tours de la partie\n(entre 1 et {nl}) : ")
+  
+  Entry(window, width=5, textvariable=tot_q).pack()
+
+  Checkbutton(window, text="Compte à rebours (le temps compte pour le score !)", variable=timerOn, onvalue=1, offvalue=0, command=uiCheckBtnTimer_Click).pack(pady=50)
+
+  Button(window, text="C'est parti !", command=uiBtnRoundsNb_Click).pack(side=BOTTOM, pady=15)
+
+  if timerOn.get() == 1:
+    uiCheckBtnTimer_Click()
+
+# Si compte à rebours coché, affiche le choix du temps
+def uiCheckBtnTimer_Click():
+  global uiEntry_timer
+  
+  if timerOn.get() == 1:
+    uiEntry_timer.pack(side=BOTTOM, pady=15)
+    uiLabel_timer.pack(side=BOTTOM)
+  else:
+    uiEntry_timer.pack_forget()
+    uiLabel_timer.pack_forget()
+
+# Vérifie que le nombre de tours choisi est cohérent avant de jouer
+def uiBtnRoundsNb_Click():
+  tot_q_local = tot_q.get()
+  if tot_q_local > 0 and tot_q_local <= nl:
+    uiClear('')
+    play()
+
+# === INITIALISATION DU JEU ! ===
+def play():
+  global id_q
+  global nb_points
+  global uiCanvas_image
+  global uiCanvas_progress
+  global uiProgressbar
+  global timerList
+
+  timerList = []
+
+  if timerOn.get() == 1:
+    uiCanvas_progress = Canvas(window, height=30)
+    uiProgressbar = Progressbar(uiCanvas_progress, length=int(window.winfo_width())-100)
+    uiCanvas_progress.pack()
+    uiProgressbar.pack(side=LEFT, padx=20)
+    Label(uiCanvas_progress, textvariable=timerSeconds, width=15).pack(side=RIGHT, padx=20)
+  
+  uiCanvas_image = Canvas(window, height=int(window.winfo_height()/3))
+  uiCanvas_image.pack(side=TOP, padx=5, pady=5)
+  Label(window, textvariable=uiTxt_question, wraplengt=550).pack()
+
+  e = open ('progression.csv', 'w') # Permet d'avoir un fichier avec seulement les scores de cette partie
+  e.close()
+
+  nb_points = 0
+  uiMenuPoints.config(text='Points : 0')
+  writeProgression(0, tot_q.get())
+  id_q.set(1)
+  createQuestion()
+
+# === À CHAQUE TOUR DE LA PARTIE ===
+
+# Définit l'image de la question
+def uiSetImage(image):
+  uiSize_img = int(window.winfo_height()/3)
+  uiImg = Image.open('images/' + image)
+  uiImg_newWidth = int(uiImg.width/uiImg.height*uiSize_img)
+  uiImg_resized = uiImg.resize((uiImg_newWidth,uiSize_img), Image.ANTIALIAS)
+  uiCanvas_image.image = ImageTk.PhotoImage(uiImg_resized)
+  uiCanvas_image.create_image(190, uiSize_img/2, image=uiCanvas_image.image, anchor='center')
+
+
+# Compte à rebours, si choisi
+def countdown(t):
+  global timerSeconds
+  if isPaused == True or uiProgressbar.winfo_exists() == 0:
+    return
+  
+  uiProgressbar['value'] -= 0.1
+  
+  timerSeconds.set(int(t))
+
+  if t > 0:
+    window.after(timerVal.get(), countdown, t-timerVal.get()*0.001)
+  else:
+    QuizAnswer_Click(-1)
+
+
+# Affiche la question et les réponses proposées
+def createQuestion():
+  global uiCanvas_reponses
+  global uiWaitVar
+  global uiTxt_question
+  global isPaused
+  global timerList
+
+  isPaused = False
+  uiProgressbar['value'] = 100
+
+  if timerOn.get() == 1:
+    countdown(timerVal.get())
+
+  id_q_local = id_q.get()
+  print(id_q_local)
+
+  row, theme = questions_list[id_q_local-1]
+
+  uiTxt_question.set(row[0])
+
+  if theme == 'informatique.csv':
+    font.nametofont("TkDefaultFont").configure(family="Consolas")
+    uiMenuLabel.config(text=f'Index {id_q_local-1}/{tot_q.get()-1}') # Easter egg : renvoie l'index de la question en commençant par 0
+  else:
+    font.nametofont("TkDefaultFont").configure(family="")
+    uiMenuLabel.config(text=f'Question {id_q_local}/{tot_q.get()}')
+
+  uiImageRef = ''
+  if len(row) > 5:
+    uiImageRef = row[5]
+
+  if uiImageRef == '' or uiImageRef == ' ' or uiImageRef == "''":
+    uiSetImage(themes_images[theme[0:len(theme)-4]])
+  else: uiSetImage(uiImageRef)
+
+  reponses = [row[1], row[2], row[3], row[4]]
+  random.shuffle(reponses) # réponses dans un ordre aléatoire
+
+  uiGridList = uiSetGrid(reponses)
+
+  uiCanvas_reponses.destroy()
+
+  uiCanvas_reponses_local = Canvas(window)
+  uiCanvas_reponses_local.pack()
+  uiCanvas_reponses = uiCanvas_reponses_local
+
+  for i in reponses:
+    print((row.index(i), reponses.index(i)))
+    irow, icol = uiGridList[reponses.index(i)]
+    uiBtn_reponse = Button(uiCanvas_reponses, text=i, wraplengt=250, command=lambda id_reponse=i: QuizAnswer_Click(row.index(id_reponse)))
+    uiBtn_reponse.grid(row=irow, column=icol, sticky='nesw')
+
+  timerList.append(time.time())
+
+
+# === L'UTILISATEUR CHOISIT SA RÉPONSE (ou alors le temps est écoulé) ===
+def QuizAnswer_Click(i):
+  global nb_points
+  global id_q
+  global tot_q
+  global isPaused
+
+  isPaused = True
+
+  id_q_local = id_q.get()
+
+  timerList[id_q_local-1] = time.time() - timerList[id_q_local-1]
+  if os.name == 'nt':
+        timerList[id_q_local-1] -= timerList[id_q_local-1]/3 # Correcton d'un bug sur Windows où le temps calculé est plus long que la réalité
+
+  line, theme = questions_list[id_q_local-1]
+  print(i)
+  print(timerList[id_q_local-1])
+
+  if i == 1:
+    message = ['Vrai', 'Bien joué', 'Super', 'Génial', 'Bravo', 'Juste']
+    a = random.choice(message)
+
+    add_points = 1
+
+    if timerOn.get() == 1:
+      points_ponderation = timerVal.get()*1.3 - timerList[id_q_local-1]
+      add_points = points_ponderation / timerVal.get()
+      if add_points < 1:
+        b = [", mais attention au temps", ", mais vous n'avez pas répondu assez vite"]
+        a += random.choice(b)
+      else: add_points = 1
+
+    nb_points += add_points
+    uiMenuPoints.config(text=f'Points : {round(nb_points, 1)}')
+    output = f'{a} ! Vous gagnez {round(add_points, 1)} point supplémentaire.'
+    messagebox.showinfo(title='La Colle', message=output)
+  elif i == -1:
+    message = ['Le temps est passé !', 'Pas eu le temps ?', 'Trop tard !', 'Le temps est écoulé !']
+    a = random.choice(message)
+    output = f'{a}\nLa réponse correcte est {line[1]} !'
+    messagebox.showerror(title='La Colle', message=output)
+  else :
+    message = ['Oh non !', 'Elle est où la culture ?', 'Zut !', 'Loupé !', 'Bien tenté !']
+    a = random.choice(message)  
+    output = f'{a}\nLa réponse correcte est {line[1]} !'
+    messagebox.showerror(title='La Colle', message=output)
+
+  tot_q_local = tot_q.get()
+  writeProgression(id_q_local, tot_q_local)
+
+  if id_q_local < tot_q_local:
+    id_q.set(id_q_local+1)
+    createQuestion()
+  else:
+    endGame()
+
+# Ecrit la progression dans le fichier
+def writeProgression(id_q_local, tot_q_local):
+  score = nb_points/tot_q_local*100
+  g = open ('progression.csv', 'a')
+  writer = csv.writer(g, delimiter = ',')
+  writer.writerow([id_q_local, score, tot_q_local, nb_points])
+  g.close() 
+
+
+# === FIN DE LA PARTIE ! ===
+def endGame():
+  global uiMenuLabel
+  global uiMenuPoints
+
+  uiClear('')
+  uiMenuLabel.config(text=' ')
+  uiMenuPoints.config(text=' ')
+
+  score = nb_points/tot_q.get()*100
+
+  timerTot = 0
+  for t in timerList:
+    print(t)
+    timerTot += t
+
+  timeMinSec = str(time.strftime("%M min %S", time.gmtime(int(timerTot))))
+
+  if timeMinSec[0:2] == '00':
+    timeMinSec = timeMinSec[len(timeMinSec)-2:]
+
+  Label(window, text=f'La partie est terminée, elle a duré {timeMinSec} secondes !\nVotre score final est de {round(score, 2)} % ({round(nb_points, 1)} points sur {tot_q.get()}).\n{scoreComment(score)}', wraplengt=550).pack(pady=5)
+  createGraph()
+  Button(window, text='Revenir au menu', command=uiHome_Click).pack()
+  
 def scoreComment(score) :
   if score == 0 :
     return 'Bonne nouvelle : Vous ne pourrez que faire mieux la prochaine fois !'
@@ -191,288 +507,6 @@ def createGraph():
   uiFigure.tight_layout()
   uiFigure_canvas = FigureCanvasTkAgg(uiFigure, master=window)
   uiFigure_canvas.get_tk_widget().pack()
-
-def endGame():
-  global uiMenuLabel
-  global uiMenuPoints
-
-  uiClear('')
-  uiMenuLabel.config(text=' ')
-  uiMenuPoints.config(text=' ')
-
-  score = nb_points/tot_q.get()*100
-
-  timerTot = 0
-  for t in timerList:
-    print(t)
-    timerTot += t
-
-  timeMinSec = str(time.strftime("%M min %S", time.gmtime(int(timerTot))))
-
-  if timeMinSec[0:2] == '00':
-    timeMinSec = timeMinSec[len(timeMinSec)-2:]
-
-  Label(window, text=f'La partie est terminée, elle a duré {timeMinSec} secondes !\nVotre score final est de {round(score, 2)} % ({round(nb_points, 1)} points sur {tot_q.get()}).\n{scoreComment(score)}', wraplengt=550).pack(pady=5)
-  createGraph()
-  Button(window, text='Revenir au menu', command=uiHome_Click).pack()
-
-def countdown(t):
-  global timerSeconds
-  if isPaused == True or uiProgressbar.winfo_exists() == 0:
-    return
-  
-  timerSeconds.set(int(t))
-  uiProgressbar['value'] -= 0.1
-
-  if t > 0:
-    window.after(10, countdown, t-0.01)
-  else:
-    QuizAnswer_Click(-1)
-   
-
-def uiSetImage(image):
-  uiSize_img = int(window.winfo_height()/3)
-  uiImg = Image.open('images/' + image)
-  uiImg_newWidth = int(uiImg.width/uiImg.height*uiSize_img)
-  uiImg_resized = uiImg.resize((uiImg_newWidth,uiSize_img), Image.ANTIALIAS)
-  uiCanvas_image.image = ImageTk.PhotoImage(uiImg_resized)
-  uiCanvas_image.create_image(190, uiSize_img/2, image=uiCanvas_image.image, anchor='center')
-
-
-def createQuestion():
-  global uiCanvas_reponses
-  global uiWaitVar
-  global uiTxt_question
-  global isPaused
-  global timerList
-
-  isPaused = False
-  uiProgressbar['value'] = 100
-
-  if timerOn.get() == 1:
-    countdown(10)
-
-  id_q_local = id_q.get()
-  print(id_q_local)
-
-  row, theme = questions_list[id_q_local-1]
-
-  uiTxt_question.set(row[0])
-
-  if theme == 'informatique.csv':
-    font.nametofont("TkDefaultFont").configure(family="Consolas")
-    uiMenuLabel.config(text=f'Index {id_q_local-1}/{tot_q.get()-1}') # Easter egg : renvoie l'index de la question en commençant par 0
-  else:
-    font.nametofont("TkDefaultFont").configure(family="")
-    uiMenuLabel.config(text=f'Question {id_q_local}/{tot_q.get()}')
-
-  uiImageRef = ''
-  if len(row) > 5:
-    uiImageRef = row[5]
-
-  if uiImageRef == '' or uiImageRef == ' ' or uiImageRef == "''":
-    uiSetImage(themes_images[theme[0:len(theme)-4]])
-  else: uiSetImage(uiImageRef)
-
-  reponses = [row[1], row[2], row[3], row[4]]
-  random.shuffle(reponses) # réponses dans un ordre aléatoire
-
-  uiGridList = uiSetGrid(reponses)
-
-  uiCanvas_reponses.destroy()
-
-  uiCanvas_reponses_local = Canvas(window)
-  uiCanvas_reponses_local.pack()
-  uiCanvas_reponses = uiCanvas_reponses_local
-
-  for i in reponses:
-    print((row.index(i), reponses.index(i)))
-    irow, icol = uiGridList[reponses.index(i)]
-    uiBtn_reponse = Button(uiCanvas_reponses, text=i, wraplengt=250, command=lambda id_reponse=i: QuizAnswer_Click(row.index(id_reponse)))
-    uiBtn_reponse.grid(row=irow, column=icol, sticky='nesw')
-
-  timerList.append(time.time())
-
-def writeProgression(id_q_local, tot_q_local):
-  score = nb_points/tot_q_local*100
-  g = open ('progression.csv', 'a')
-  writer = csv.writer(g, delimiter = ',')
-  writer.writerow([id_q_local, score, tot_q_local, nb_points])
-  g.close()
-
-def QuizAnswer_Click(i):
-  global nb_points
-  global id_q
-  global tot_q
-  global isPaused
-
-  isPaused = True
-
-  id_q_local = id_q.get()
-
-  timerList[id_q_local-1] = time.time() - timerList[id_q_local-1]
-  if os.name == 'nt':
-        timerList[id_q_local-1] -= timerList[id_q_local-1]/3 # Correcton d'un bug sur Windows où le temps calculé est plus long que la réalité
-
-  line, theme = questions_list[id_q_local-1]
-  print(i)
-  print(timerList[id_q_local-1])
-
-  if i == 1:
-    message = ['Vrai', 'Bien joué', 'Super', 'Génial', 'Bravo', 'Juste']
-    a = random.choice(message)
-
-    add_points = 0
-
-    if timerOn.get() == 1:
-      points_ponderation = timerList[id_q_local-1] - 4
-      if points_ponderation > 1:
-        add_points += 1 / points_ponderation
-        b = [", mais attention au temps", ", mais vous n'avez pas répondu assez vite"]
-        a += random.choice(b)
-      else: add_points += 1
-    else:
-      add_points += 1
-    nb_points += add_points
-    uiMenuPoints.config(text=f'Points : {round(nb_points, 1)}')
-    output = f'{a} ! Vous gagnez {round(add_points, 1)} point supplémentaire.'
-    messagebox.showinfo(title='La Colle', message=output)
-  elif i == -1:
-    message = ['Le temps est passé !', 'Pas eu le temps ?', 'Trop tard !', 'Les 10 secondes sont écoulées !']
-    a = random.choice(message)
-    output = f'{a}\nLa réponse correcte est {line[1]} !'
-    messagebox.showerror(title='La Colle', message=output)
-  else :
-    message = ['Oh non !', 'Elle est où la culture ?', 'Zut !', 'Loupé !', 'Bien tenté !']
-    a = random.choice(message)
-    output = f'{a}\nLa réponse correcte est {line[1]} !'
-    messagebox.showerror(title='La Colle', message=output)
- 
-  tot_q_local = tot_q.get()
-  writeProgression(id_q_local, tot_q_local)
-
-  if id_q_local < tot_q_local:
-    id_q.set(id_q_local+1)
-    createQuestion()
-  else:
-    endGame()
-
-
-def play():
-  global id_q
-  global nb_points
-  global uiCanvas_image
-  global uiCanvas_progress
-  global uiProgressbar
-  global timerList
-
-  timerList = []
-
-  if timerOn.get() == 1:
-    uiCanvas_progress = Canvas(window, height=30)
-    uiProgressbar = Progressbar(uiCanvas_progress, length=int(window.winfo_width())-100)
-    uiCanvas_progress.pack()
-    uiProgressbar.pack(side=LEFT, padx=20)
-    Label(uiCanvas_progress, textvariable=timerSeconds, width=15).pack(side=RIGHT, padx=20)
-  
-  uiCanvas_image = Canvas(window, height=int(window.winfo_height()/3))
-  uiCanvas_image.pack(side=TOP, padx=5, pady=5)
-  Label(window, textvariable=uiTxt_question, wraplengt=550).pack()
-
-  e = open ('progression.csv', 'w') # Permet d'avoir un fichier avec seulement les scores de cette partie
-  e.close()
-
-  nb_points = 0
-  uiMenuPoints.config(text='Points : 0')
-  writeProgression(0, tot_q.get())
-  id_q.set(1)
-  createQuestion()
-
-
-def uiBtnRoundsNb_Click():
-  tot_q_local = tot_q.get()
-  if tot_q_local > 0 and tot_q_local <= nl:
-    uiClear('')
-    play()
-
-
-def setRoundsNb(themeArg):
-  # --- Ouverture du fichier ---
-  global nl
-  global questions_list
-
-  flist = []
-  nl = 0
-  questions_list = []
-
-  themeDict, theme = themeArg
-
-  if theme == "tout_revision":
-    # pour chaque fichier, si le fichier est dans themes_revision, ajoute le fichier à flist
-    for f in os.listdir("./questions"):
-      if f.endswith(".csv") and f[0:len(f)-4] in themes_revision.keys():
-        flist.append((open(f'questions/{f}', encoding='utf-8'), f))
-  elif theme == "tout_jeu":
-    # pour chaque fichier, si le fichier est dans themes_jeu, ajoute le fichier à flist
-    for f in os.listdir("./questions"):
-      if f.endswith(".csv") and f[0:len(f)-4] in themes_jeu.keys():
-        flist.append((open(f'questions/{f}', encoding='utf-8'), f))
-  else:
-    flist.append((open(f'questions/{theme}.csv', encoding='utf-8'), theme+'.csv'))
-
-  for f, fpath in flist:
-    nl += len(f.readlines())
-    f.seek(0)
-    print((theme, nl))
-    reader = csv.reader(f, delimiter=';')
-    for row in reader:
-      questions_list.append((row, fpath))
-
-  random.shuffle(questions_list) # Questions dans un ordre aléatoire
-
-  uiClear('Canvas')
-  uiTxt_welcome.set(f"Entrez le nombre de tours de la partie\n(entre 1 et {nl}) : ")
-
-  Entry(window, width = 5, textvariable = tot_q).pack()
-
-  Checkbutton(window, text="Compte à rebours (le temps compte pour le score !)", variable=timerOn, onvalue=1, offvalue=0).pack(pady=15)
-
-  Button(window, text="C'est parti !", command=uiBtnRoundsNb_Click).pack(pady=15)
-
-
-def uiSetGrid(themeDict):
-  uiGridList = []
-  # gridSize = int(sqrt(len(themeDict)) + 0.5) # si grille carrée
-  gridSize = int(len(themeDict)/2 + 0.5) # si grille à 2 colonnes
-  for irow in range(1, gridSize+1):
-    for icol in range(1, 3):
-      uiGridList.append((irow, icol))
-  return uiGridList
-
-
-def displayThemes(themeDict):
-  uiClear('Button')
-  uiMenuBtn.pack(side=LEFT)
-  uiMenuPoints.config(text=' ')
-  uiMenuLabel.config(text=' ')
-  uiMenubar.pack()
-  uiCanvas_themes = Canvas(window)
-  uiGridList = uiSetGrid(themeDict)
-  i = 0
-  for k, v in themeDict.items():
-    print(v)
-    irow, icol = uiGridList[i]
-    uiBtn_theme = Button(uiCanvas_themes, text=v, command=lambda theme=k: setRoundsNb((themeDict, theme))).grid(row=irow, column=icol, sticky='nesw')
-    i += 1
-  uiCanvas_themes.pack(side=BOTTOM, pady=15)
-
-def uiBtnPlay_Click():
-  uiTxt_welcome.set('Sur quel thème voulez-vous jouer ?')
-  displayThemes(themes_jeu)
-  
-def uiBtnRevise_Click():
-  uiTxt_welcome.set('Quel thème voulez-vous réviser ?')
-  displayThemes(themes_revision)  
 
 
 # --- Bienvenue ! ---

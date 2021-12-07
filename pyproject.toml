@@ -9,6 +9,8 @@ python = "^3.8"
 ipython = "^7.29.0"
 ttkthemes = "^3.2.2"
 emoji = "^1.6.1"
+datamart-isi = "^2.1.10"
+wikipedia = "^1.4.0"
 
 [tool.poetry.dev-dependencies]
 

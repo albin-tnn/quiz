@@ -1,9 +1,0 @@
-Pour la présentation on devra expliquer si on a renconter des problèmes 
-Donc on pourra noter ici nos difficultés
-
- - Les f.seek oubliés qui ne permettent pas plusieurs questions d'affilée
- - Le code doit rester lisible, difficile quand on travaille à plusieurs
- - Que les questions ne se répètent pas (fait avec une liste randomisée (shuffle) qui contient toutes les questions, à chaque question prend l'index du no de la question - 1)
- - Ecrire dans un fichier csv : pour que ce qu'on ajoute aille à la ligne => utiliser le mode 'a'
- - Effacer le fichier pour n'avoir que les scores de la partie en cours et pas des parties précédentes : ouvrir le fichier progression en mode 'w'
- - Gérer le nom des variables (pas tjs réutiliser reader !) 

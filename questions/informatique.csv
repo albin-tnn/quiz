@@ -11,7 +11,7 @@ Que vaut 39 en héxadécimal ?;27;2C;1A;18;
 Soit le tuple a = (1 , 'b' , 'la'). Comment y ajouter la lettre c ?;on ne peut pas;a.append('c');a.add('c');a.pop('c');
 Quel valeur/signe est vrai ?;5;0;[];''
 Qu'est-ce qui est capital lorsqu'on utilise une condition, une boucle, définit une fonction ?;Indenter;Mettre des parenthèses;Mettre un point d'exclamation à la fin du code;Importer numpy;
-Les listes sont des collections :;Muables de valeurs ordonnée; Immuables de valeurs sans ordre;Muables de valeurs sans ordre;Immuables de valeurs ordonnées;
+Les listes sont des collections :;Muables de valeurs ordonnées; Immuables de valeurs sans ordre;Muables de valeurs sans ordre;Immuables de valeurs ordonnées;
 Les tuples sont des collections :;Immuables de valeurs ordonnées;Muable de valeurs ordonnées;Immuables de valeurs sans ordre;Muable de valeurs sans ordre;
 l = [1,2,3,4], que vaut l[3] ?;4;3;2;1;
 Est-ce que la syntaxe est juste : car[color] = blue ?;Non, il manque les guillemets autour de la clé et de la valeur;Oui;Non, il faut des {} autour de la clé;Non, il faut des {} autour de la clé et la clé et la valeur doivent être entre guillemet;
