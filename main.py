@@ -56,7 +56,7 @@ themes_images = {
   'citations' : 'citation.png'
 }
 
-# Toutes les variables et fonctions liées à l'interface Tkinter sont préfixées "ui"
+# Les variables et fonctions purement liées à l'interface Tkinter sont préfixées "ui"
 
 window = Tk()
 window.title('La Colle')
@@ -64,7 +64,7 @@ window.geometry('600x400')
 isWindowBig = False
 
 if os.name == 'nt': # si exécuté sur Windows
-  window.configure(bg='#F0F0F0') # évite un bug lors de la création du graphe
+  window.configure(bg='#F0F0F0') # évite un bug lors de la création du graph
 
 uiTxt_welcome = StringVar()
 uiTxt_question = StringVar()
@@ -88,8 +88,7 @@ isPaused = False # Pause quand réponse choisie ou càr. à 0
 timerList = [] # Liste des temps passés sur chaque question, pour afficher le total à la fin
 
 uiCanvas_image = Canvas(window, height=int(window.winfo_height()/3))
-uiEntry_timer = Entry(window, width=5, textvariable=timerVal)
-uiLabel_timer = Label(window, text='Entrez le temps du compte à rebours (en secondes) :')
+
 
 
 def uiClear(objType):
@@ -97,23 +96,23 @@ def uiClear(objType):
   global uiMenuPoints
 
   objList = window.pack_slaves()
-  if objType == '': # Supprime tous les objets de la fenètre, sauf canvas4 (qui contient le bouton Retour)
+  if objType == '': # Supprime tous les objets de la fenêtre, sauf canvas4 (qui contient le bouton Retour)
     uiMenuLabel.config(text=' ')
     uiMenuPoints.config(text=' ')
     for i in objList:
-      print(str(i))
       if str(i) != '.!canvas4':
-        i.pack_forget()
+        i.destroy()
   else:
     for i in objList: # Supprime tous les objets du type spécifié
       if i.winfo_class() == objType and str(i) != '.!canvas4':
-        i.pack_forget()
+        i.destroy()
   font.nametofont("TkDefaultFont").configure(family="")
 
 
 def uiHome_Click():
   uiClear('')
   Welcome()
+
 
 uiMenubar = Canvas(window, height=30)
 uiMenubar.myId = 'menubar'
@@ -124,6 +123,7 @@ uiMenuBtn.pack(side=LEFT)
 uiMenuPoints.pack(side=RIGHT, padx=50)
 uiMenuLabel.pack(side=RIGHT, padx=10)
 
+print('Il ne se passe rien ici, utilisez la fenêtre Tkinter !')
 
 def uiSetWindowSize():
   global isWindowBig
@@ -182,7 +182,6 @@ def displayThemes(themeDict):
   uiGridList = uiSetGrid(themeDict)
   i = 0
   for k, v in themeDict.items():
-    print(v)
     irow, icol = uiGridList[i]
     uiBtn_theme = Button(uiCanvas_themes, text=v, command=lambda theme=k: setRoundsNb((themeDict, theme))).grid(row=irow, column=icol, sticky='nesw')
     i += 1
@@ -216,7 +215,6 @@ def setRoundsNb(themeArg):
   for f, fpath in flist:
     nl += len(f.readlines())
     f.seek(0)
-    print((theme, nl))
     reader = csv.reader(f, delimiter=';')
     for row in reader:
       questions_list.append((row, fpath))
@@ -237,8 +235,9 @@ def setRoundsNb(themeArg):
 
 # Si compte à rebours coché, affiche le choix du temps
 def uiCheckBtnTimer_Click():
-  global uiEntry_timer
-  
+  uiEntry_timer = Entry(window, width=5, textvariable=timerVal)
+  uiLabel_timer = Label(window, text='Entrez le temps du compte à rebours (en secondes) :')
+
   if timerOn.get() == 1:
     uiEntry_timer.pack(side=BOTTOM, pady=15)
     uiLabel_timer.pack(side=BOTTOM)
@@ -253,6 +252,7 @@ def uiBtnRoundsNb_Click():
     uiClear('')
     play()
 
+
 # === INITIALISATION DU JEU ! ===
 def play():
   global id_q
@@ -263,6 +263,7 @@ def play():
   global timerList
 
   timerList = []
+  timerSeconds.set(timerVal.get())
 
   if timerOn.get() == 1:
     uiCanvas_progress = Canvas(window, height=30)
@@ -284,6 +285,7 @@ def play():
   id_q.set(1)
   createQuestion()
 
+
 # === À CHAQUE TOUR DE LA PARTIE ===
 
 # Définit l'image de la question
@@ -295,13 +297,11 @@ def uiSetImage(image):
   uiCanvas_image.image = ImageTk.PhotoImage(uiImg_resized)
   uiCanvas_image.create_image(190, uiSize_img/2, image=uiCanvas_image.image, anchor='center')
 
-
 # Compte à rebours, si choisi
 def countdown(t):
   global timerSeconds
   if isPaused == True or uiProgressbar.winfo_exists() == 0:
     return
-  
   uiProgressbar['value'] -= 0.1
   
   timerSeconds.set(int(t))
@@ -310,7 +310,6 @@ def countdown(t):
     window.after(timerVal.get(), countdown, t-timerVal.get()*0.001)
   else:
     QuizAnswer_Click(-1)
-
 
 # Affiche la question et les réponses proposées
 def createQuestion():
@@ -327,7 +326,6 @@ def createQuestion():
     countdown(timerVal.get())
 
   id_q_local = id_q.get()
-  print(id_q_local)
 
   row, theme = questions_list[id_q_local-1]
 
@@ -360,7 +358,6 @@ def createQuestion():
   uiCanvas_reponses = uiCanvas_reponses_local
 
   for i in reponses:
-    print((row.index(i), reponses.index(i)))
     irow, icol = uiGridList[reponses.index(i)]
     uiBtn_reponse = Button(uiCanvas_reponses, text=i, wraplengt=250, command=lambda id_reponse=i: QuizAnswer_Click(row.index(id_reponse)))
     uiBtn_reponse.grid(row=irow, column=icol, sticky='nesw')
@@ -384,8 +381,6 @@ def QuizAnswer_Click(i):
         timerList[id_q_local-1] -= timerList[id_q_local-1]/3 # Correcton d'un bug sur Windows où le temps calculé est plus long que la réalité
 
   line, theme = questions_list[id_q_local-1]
-  print(i)
-  print(timerList[id_q_local-1])
 
   if i == 1:
     message = ['Vrai', 'Bien joué', 'Super', 'Génial', 'Bravo', 'Juste']
@@ -447,7 +442,6 @@ def endGame():
 
   timerTot = 0
   for t in timerList:
-    print(t)
     timerTot += t
 
   timeMinSec = str(time.strftime("%M min %S", time.gmtime(int(timerTot))))
@@ -474,7 +468,6 @@ def scoreComment(score) :
     return 'Bravo !'
   elif score == 100 :
     return 'Félicitations'
-
 
 def createGraph():
   h = open ('progression.csv', 'r')
