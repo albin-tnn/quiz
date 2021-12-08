@@ -88,7 +88,8 @@ isPaused = False # Pause quand réponse choisie ou càr. à 0
 timerList = [] # Liste des temps passés sur chaque question, pour afficher le total à la fin
 
 uiCanvas_image = Canvas(window, height=int(window.winfo_height()/3))
-
+uiEntry_timer = Entry(window, width=5, textvariable=timerVal)
+uiLabel_timer = Label(window, text='Entrez le temps du compte à rebours (en secondes) :')
 
 
 def uiClear(objType):
@@ -235,10 +236,12 @@ def setRoundsNb(themeArg):
 
 # Si compte à rebours coché, affiche le choix du temps
 def uiCheckBtnTimer_Click():
-  uiEntry_timer = Entry(window, width=5, textvariable=timerVal)
-  uiLabel_timer = Label(window, text='Entrez le temps du compte à rebours (en secondes) :')
+  global uiEntry_timer
+  global uiLabel_timer
 
   if timerOn.get() == 1:
+    uiEntry_timer = Entry(window, width=5, textvariable=timerVal)
+    uiLabel_timer = Label(window, text='Entrez le temps du compte à rebours (en secondes) :')
     uiEntry_timer.pack(side=BOTTOM, pady=15)
     uiLabel_timer.pack(side=BOTTOM)
   else:
