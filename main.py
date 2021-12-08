@@ -323,9 +323,9 @@ def createQuestion():
   global timerList
 
   isPaused = False
-  uiProgressbar['value'] = 100
-
+  
   if timerOn.get() == 1:
+    uiProgressbar['value'] = 100
     countdown(timerVal.get())
 
   id_q_local = id_q.get()
